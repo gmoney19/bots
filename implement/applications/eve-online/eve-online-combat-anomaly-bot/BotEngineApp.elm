@@ -89,12 +89,12 @@ import Set
 
 defaultBotSettings : BotSettings
 defaultBotSettings =
-    { hideWhenNeutralInLocal = AppSettings.No
-    , anomalyNames = []
-    , ratsToAvoid = []
+    { hideWhenNeutralInLocal = AppSettings.Yes
+    , anomalyNames = [Guristas Haven]
+    , ratsToAvoid = [Guristas Dreadnought ]
     , modulesToActivateAlways = []
-    , maxTargetCount = 3
-    , botStepDelayMilliseconds = 1400
+    , maxTargetCount = 1
+    , botStepDelayMilliseconds = 600
     }
 
 
@@ -275,8 +275,7 @@ memoryOfAnomalyWithID anomalyID =
 anomalyBotDecisionRoot : BotDecisionContext -> DecisionPathNode
 anomalyBotDecisionRoot context =
     anomalyBotDecisionRootBeforeApplyingSettings context
-        |> EveOnline.AppFrameworkSeparatingMemory.setMillisecondsToNextReadingFromGameBase
-            context.eventContext.appSettings.botStepDelayMilliseconds
+        |> EveOnline.AppFrameworkSeparatingMemory.setMillisecondsToNextReadingFromGameBase 100
 
 
 anomalyBotDecisionRootBeforeApplyingSettings : BotDecisionContext -> DecisionPathNode
