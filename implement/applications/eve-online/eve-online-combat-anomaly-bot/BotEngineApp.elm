@@ -90,9 +90,9 @@ import Set
 defaultBotSettings : BotSettings
 defaultBotSettings =
     { hideWhenNeutralInLocal = AppSettings.Yes
-    , anomalyNames = [Guristas Haven]
-    , ratsToAvoid = [Guristas Dreadnought]
-    , modulesToActivateAlways = [Afterburner]
+    , anomalyNames = []
+    , ratsToAvoid = []
+    , modulesToActivateAlways = []
     , maxTargetCount = 1
     , botStepDelayMilliseconds = 600
     }
