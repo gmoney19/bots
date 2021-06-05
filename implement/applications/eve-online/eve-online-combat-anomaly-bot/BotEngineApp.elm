@@ -275,7 +275,7 @@ memoryOfAnomalyWithID anomalyID =
 anomalyBotDecisionRoot : BotDecisionContext -> DecisionPathNode
 anomalyBotDecisionRoot context =
     anomalyBotDecisionRootBeforeApplyingSettings context
-        |> EveOnline.AppFrameworkSeparatingMemory.setMillisecondsToNextReadingFromGameBase 100
+        |> EveOnline.AppFrameworkSeparatingMemory.setMillisecondsToNextReadingFromGameBase 50
 
 
 anomalyBotDecisionRootBeforeApplyingSettings : BotDecisionContext -> DecisionPathNode
