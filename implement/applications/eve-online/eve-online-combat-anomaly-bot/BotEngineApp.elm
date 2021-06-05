@@ -89,7 +89,7 @@ import Set
 
 defaultBotSettings : BotSettings
 defaultBotSettings =
-    { hideWhenNeutralInLocal = AppSettings.Yes
+    { hideWhenNeutralInLocal = AppSettings.No
     , anomalyNames = []
     , ratsToAvoid = []
     , modulesToActivateAlways = []
