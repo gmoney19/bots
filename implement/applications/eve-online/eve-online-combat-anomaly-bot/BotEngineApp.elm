@@ -94,7 +94,7 @@ defaultBotSettings =
     , ratsToAvoid = []
     , modulesToActivateAlways = []
     , maxTargetCount = 1
-    , botStepDelayMilliseconds = 600
+    , botStepDelayMilliseconds = 100
     }
 
 
