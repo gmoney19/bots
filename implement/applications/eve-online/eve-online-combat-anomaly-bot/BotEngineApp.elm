@@ -93,8 +93,8 @@ defaultBotSettings =
     , anomalyNames = []
     , ratsToAvoid = []
     , modulesToActivateAlways = []
-    , maxTargetCount = 1
-    , botStepDelayMilliseconds = 100
+    , maxTargetCount = 3
+    , botStepDelayMilliseconds = 1400
     }
 
 
@@ -275,7 +275,8 @@ memoryOfAnomalyWithID anomalyID =
 anomalyBotDecisionRoot : BotDecisionContext -> DecisionPathNode
 anomalyBotDecisionRoot context =
     anomalyBotDecisionRootBeforeApplyingSettings context
-        |> EveOnline.AppFrameworkSeparatingMemory.setMillisecondsToNextReadingFromGameBase 50
+        |> EveOnline.AppFrameworkSeparatingMemory.setMillisecondsToNextReadingFromGameBase
+            context.eventContext.appSettings.botStepDelayMilliseconds
 
 
 anomalyBotDecisionRootBeforeApplyingSettings : BotDecisionContext -> DecisionPathNode
@@ -695,10 +696,12 @@ launchAndEngageDrones context =
                         else if 0 < dronesInBayQuantity && dronesInLocalSpaceQuantity < 5 then
                             Just
                                 (describeBranch "Launch drones"
-                                    (useContextMenuCascade
-                                        ( "drones group", droneGroupInBay.header.uiNode )
-                                        (useMenuEntryWithTextContaining "Launch drone" menuCascadeCompleted)
-                                        context
+                                    (decideActionForCurrentStep
+                                        [ EffectOnWindow.KeyDown EffectOnWindow.vkey_SHIFT
+                                        , EffectOnWindow.KeyDown EffectOnWindow.vkey_F
+                                        , EffectOnWindow.KeyUp EffectOnWindow.vkey_F
+                                        , EffectOnWindow.KeyUp EffectOnWindow.vkey_SHIFT
+                                        ]
                                     )
                                 )
 
