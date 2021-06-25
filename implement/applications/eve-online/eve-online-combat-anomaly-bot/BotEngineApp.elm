@@ -693,7 +693,7 @@ launchAndEngageDrones context =
                                     )
                                 )
 
-                        else if 0 < dronesInBayQuantity && dronesInLocalSpaceQuantity < 5 then
+                        else if 0 < dronesInBayQuantity && dronesInLocalSpaceQuantity < 2 then
                             Just
                                 (describeBranch "Launch drones"
                                     (decideActionForCurrentStep
