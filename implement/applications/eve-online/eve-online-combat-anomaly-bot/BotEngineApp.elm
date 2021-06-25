@@ -734,14 +734,17 @@ returnDronesToBay context =
             )
 
 
-lockTargetFromOverviewEntry : OverviewWindowEntry -> BotDecisionContext -> DecisionPathNode
-lockTargetFromOverviewEntry overviewEntry context =
-    describeBranch ("Lock target from overview entry '" ++ (overviewEntry.objectName |> Maybe.withDefault "") ++ "'")
-        (useContextMenuCascadeOnOverviewEntry
-            (useMenuEntryWithTextEqual "Lock target" menuCascadeCompleted)
-            overviewEntry
-            context
-        )
+lockTargetFromOverviewEntry : ShipUI → OverviewWindowEntry → Maybe DecisionPathNode
+lockTargetFromOverviewEntry shipUI nextOverviewEntryToLock =
+describeBranch (“Lock target from overview entry '” ++ (nextOverviewEntryToLock.objectName |> Maybe.withDefault “”) ++ “’”)
+(decideActionForCurrentStep
+([ [ EffectOnWindow.KeyDown EffectOnWindow.vkey_CONTROL ]
+, nextOverviewEntryToLock.uiNode |> clickOnUIElement MouseButtonLeft
+, [ EffectOnWindow.KeyUp EffectOnWindow.vkey_CONTROL ]
+]
+|> List.concat
+)
+)
 
 
 readShipUIModuleButtonTooltips : BotDecisionContext -> Maybe DecisionPathNode
