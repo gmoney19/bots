@@ -734,6 +734,12 @@ returnDronesToBay context =
                                     )
                                 )
 
+                        else
+                            Nothing
+
+                    _ ->
+                        Nothing
+            )
 
 lockTargetFromOverviewEntry : ShipUI → OverviewWindowEntry → Maybe DecisionPathNode
 lockTargetFromOverviewEntry shipUI nextOverviewEntryToLock =
