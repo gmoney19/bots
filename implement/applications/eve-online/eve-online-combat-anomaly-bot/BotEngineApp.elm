@@ -725,13 +725,14 @@ returnDronesToBay context =
                 else
                     Just
                         (describeBranch "I see there are drones in local space. Return those to bay."
-                            (useContextMenuCascade
-                                ( "drones group", droneGroupInLocalSpace.header.uiNode )
-                                (useMenuEntryWithTextContaining "Return to drone bay" menuCascadeCompleted)
-                                context
-                            )
-                        )
-            )
+                            (decideActionForCurrentStep
+                                        [ EffectOnWindow.KeyDown EffectOnWindow.vkey_SHIFT
+                                        , EffectOnWindow.KeyDown EffectOnWindow.vkey_R
+                                        , EffectOnWindow.KeyUp EffectOnWindow.vkey_R
+                                        , EffectOnWindow.KeyUp EffectOnWindow.vkey_SHIFT
+                                        ]
+                                    )
+                                )
 
 
 lockTargetFromOverviewEntry : ShipUI → OverviewWindowEntry → Maybe DecisionPathNode
