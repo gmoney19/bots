@@ -704,10 +704,14 @@ launchAndEngageDrones context =
                                         ]
                                     )
                                 )
+                        else
+                            Nothing
 
+                    _ ->
+                        Nothing
             )
-            else
-                Nothing 
+            
+            
 
 returnDronesToBay : BotDecisionContext -> Maybe DecisionPathNode
 returnDronesToBay context =
@@ -730,9 +734,14 @@ returnDronesToBay context =
                                     )
                                 )
 
+                  else
+                            Nothing
+
+                    _ ->
+                        Nothing
             )
-            else
-                Nothing 
+            
+             
 
 lockTargetFromOverviewEntry : ShipUI → OverviewWindowEntry → Maybe DecisionPathNode
 lockTargetFromOverviewEntry shipUI nextOverviewEntryToLock =
