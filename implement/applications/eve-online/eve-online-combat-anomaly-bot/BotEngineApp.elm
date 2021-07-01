@@ -705,11 +705,6 @@ launchAndEngageDrones context =
                                     )
                                 )
 
-                        else
-                            Nothing
-
-                    _ ->
-                        Nothing
             )
 
 
