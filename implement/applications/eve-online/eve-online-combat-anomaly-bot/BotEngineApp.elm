@@ -722,7 +722,7 @@ returnDronesToBay context =
                 if (droneGroupInLocalSpace.header.quantityFromTitle |> Maybe.withDefault 0) < 1 then
                     Nothing
 
-                else
+                else if
                     Just
                         (describeBranch "I see there are drones in local space. Return those to bay."
                             (decideActionForCurrentStep
