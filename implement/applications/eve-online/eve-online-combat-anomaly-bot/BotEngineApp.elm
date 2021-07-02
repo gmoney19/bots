@@ -732,7 +732,7 @@ returnDronesToBay context =
                                         , EffectOnWindow.KeyUp EffectOnWindow.vkey_SHIFT
                                         ]
                                     )
-                                )
+                                ))
 
                
             
