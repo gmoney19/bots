@@ -734,7 +734,7 @@ returnDronesToBay context =
                                     )
                                 )
 
-                  else
+                  then
                             Nothing
 
                     _ ->
