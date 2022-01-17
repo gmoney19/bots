@@ -94,8 +94,8 @@ import Set
 
 defaultBotSettings : BotSettings
 defaultBotSettings =
-    { hideWhenNeutralInLocal = AppSettings.No
-    , anomalyNames = []
+    { hideWhenNeutralInLocal = AppSettings.Yes
+    , anomalyNames = [Guristas Forlorn]
     , ratsToAvoid = []
     , modulesToActivateAlways = []
     , maxTargetCount = 3
@@ -105,7 +105,7 @@ defaultBotSettings =
 
 parseBotSettings : String -> Result String BotSettings
 parseBotSettings =
-    AppSettings.parseSimpleListOfAssignments { assignmentsSeparators = [ ",", "\n" ] }
+    AppSettings.parseSimpleListOfAssignments { assignmentsSeparators = [ ",", "\y" ] }
         ([ ( "hide-when-neutral-in-local"
            , AppSettings.valueTypeYesOrNo
                 (\hide -> \settings -> { settings | hideWhenNeutralInLocal = hide })
