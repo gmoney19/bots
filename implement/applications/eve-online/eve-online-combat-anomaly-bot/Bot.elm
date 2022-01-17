@@ -1,4 +1,5 @@
-{- EVE Online combat anomaly bot version 2021-05-09
+{- EVE Online combat anomaly bot version 2021-10-29
+
    This bot uses the probe scanner to warp to combat anomalies and kills rats using drones and weapon modules.
 
    Setup instructions for the EVE Online client:
@@ -23,31 +24,35 @@
    When using more than one setting, start a new line for each setting in the text input field.
    Here is an example of a complete settings string:
 
+   ```
    anomaly-name = Drone Patrol
    anomaly-name = Drone Horde
    hide-when-neutral-in-local = yes
    rat-to-avoid = Infested Carrier
    module-to-activate-always = shield hardener
+   ```
+
+   To learn about the anomaly bot, see https://to.botlab.org/guide/app/eve-online-combat-anomaly-bot
+
 -}
 {-
-   app-catalog-tags:eve-online,anomaly,ratting
+   catalog-tags:eve-online,anomaly,ratting
    authors-forum-usernames:viir
 -}
 
 
-module BotEngineApp exposing
+module Bot exposing
     ( State
-    , initState
-    , processEvent
+    , botMain
     )
 
-import BotEngine.Interface_To_Host_20201207 as InterfaceToHost
+import BotLab.BotInterface_To_Host_20210823 as InterfaceToHost
 import Common.AppSettings as AppSettings
 import Common.Basics exposing (listElementAtWrappedIndex)
 import Common.DecisionPath exposing (describeBranch)
 import Common.EffectOnWindow as EffectOnWindow exposing (MouseButton(..))
 import Dict
-import EveOnline.AppFramework
+import EveOnline.BotFramework
     exposing
         ( ReadingFromGameClient
         , SeeUndockingComplete
@@ -64,7 +69,7 @@ import EveOnline.AppFramework
         , useMenuEntryWithTextContainingFirstOf
         , useMenuEntryWithTextEqual
         )
-import EveOnline.AppFrameworkSeparatingMemory
+import EveOnline.BotFrameworkSeparatingMemory
     exposing
         ( DecisionPathNode
         , UpdateMemoryContext
@@ -144,8 +149,8 @@ type alias BotSettings =
     }
 
 
-type alias BotState =
-    EveOnline.AppFrameworkSeparatingMemory.AppState BotMemory
+type alias State =
+    EveOnline.BotFrameworkSeparatingMemory.StateIncludingFramework BotSettings BotMemory
 
 
 type alias BotMemory =
@@ -161,11 +166,7 @@ type alias MemoryOfAnomaly =
 
 
 type alias BotDecisionContext =
-    EveOnline.AppFrameworkSeparatingMemory.StepDecisionContext BotSettings BotMemory
-
-
-type alias State =
-    EveOnline.AppFramework.StateIncludingFramework BotSettings BotState
+    EveOnline.BotFrameworkSeparatingMemory.StepDecisionContext BotSettings BotMemory
 
 
 type ReasonToIgnoreProbeScanResult
@@ -211,8 +212,8 @@ findReasonToIgnoreProbeScanResult context probeScanResult =
                         |> Maybe.withDefault False
 
                 matchesAnomalyNameFromSettings =
-                    (context.eventContext.appSettings.anomalyNames |> List.isEmpty)
-                        || (context.eventContext.appSettings.anomalyNames
+                    (context.eventContext.botSettings.anomalyNames |> List.isEmpty)
+                        || (context.eventContext.botSettings.anomalyNames
                                 |> List.any
                                     (\anomalyName ->
                                         probeScanResult.cellsTexts
@@ -247,7 +248,7 @@ findReasonToAvoidAnomalyFromMemory context { anomalyID } =
                 [] ->
                     let
                         ratsToAvoidSeen =
-                            getRatsToAvoidSeenInAnomaly context.eventContext.appSettings memoryOfAnomaly
+                            getRatsToAvoidSeenInAnomaly context.eventContext.botSettings memoryOfAnomaly
                     in
                     case ratsToAvoidSeen |> Set.toList of
                         ratToAvoid :: _ ->
@@ -275,8 +276,8 @@ memoryOfAnomalyWithID anomalyID =
 anomalyBotDecisionRoot : BotDecisionContext -> DecisionPathNode
 anomalyBotDecisionRoot context =
     anomalyBotDecisionRootBeforeApplyingSettings context
-        |> EveOnline.AppFrameworkSeparatingMemory.setMillisecondsToNextReadingFromGameBase
-            context.eventContext.appSettings.botStepDelayMilliseconds
+        |> EveOnline.BotFrameworkSeparatingMemory.setMillisecondsToNextReadingFromGameBase
+            context.eventContext.botSettings.botStepDelayMilliseconds
 
 
 anomalyBotDecisionRootBeforeApplyingSettings : BotDecisionContext -> DecisionPathNode
@@ -349,7 +350,7 @@ closeMessageBox readingFromGameClient =
 continueIfShouldHide : { ifShouldHide : DecisionPathNode } -> BotDecisionContext -> Maybe DecisionPathNode
 continueIfShouldHide config context =
     case
-        context.eventContext |> EveOnline.AppFramework.secondsToSessionEnd |> Maybe.andThen (nothingFromIntIfGreaterThan 200)
+        context.eventContext |> EveOnline.BotFramework.secondsToSessionEnd |> Maybe.andThen (nothingFromIntIfGreaterThan 200)
     of
         Just secondsToSessionEnd ->
             Just
@@ -358,7 +359,7 @@ continueIfShouldHide config context =
                 )
 
         Nothing ->
-            if context.eventContext.appSettings.hideWhenNeutralInLocal /= AppSettings.Yes then
+            if context.eventContext.botSettings.hideWhenNeutralInLocal /= AppSettings.Yes then
                 Nothing
 
             else
@@ -577,7 +578,7 @@ combat context seeUndockingComplete continueIfCombatComplete =
                                             (launchAndEngageDrones context
                                                 |> Maybe.withDefault
                                                     (describeBranch "No idling drones."
-                                                        (if context.eventContext.appSettings.maxTargetCount <= (context.readingFromGameClient.targets |> List.length) then
+                                                        (if context.eventContext.botSettings.maxTargetCount <= (context.readingFromGameClient.targets |> List.length) then
                                                             describeBranch "Enough locked targets." waitForProgressInGame
 
                                                          else
@@ -693,25 +694,23 @@ launchAndEngageDrones context =
                                     )
                                 )
 
-                        else if 0 < dronesInBayQuantity && dronesInLocalSpaceQuantity < 2 then
+                        else if 0 < dronesInBayQuantity && dronesInLocalSpaceQuantity < 5 then
                             Just
                                 (describeBranch "Launch drones"
-                                    (decideActionForCurrentStep
-                                        [ EffectOnWindow.KeyDown EffectOnWindow.vkey_SHIFT
-                                        , EffectOnWindow.KeyDown EffectOnWindow.vkey_F
-                                        , EffectOnWindow.KeyUp EffectOnWindow.vkey_F
-                                        , EffectOnWindow.KeyUp EffectOnWindow.vkey_SHIFT
-                                        ]
+                                    (useContextMenuCascade
+                                        ( "drones group", droneGroupInBay.header.uiNode )
+                                        (useMenuEntryWithTextContaining "Launch drone" menuCascadeCompleted)
+                                        context
                                     )
                                 )
+
                         else
                             Nothing
 
                     _ ->
                         Nothing
             )
-            
-            
+
 
 returnDronesToBay : BotDecisionContext -> Maybe DecisionPathNode
 returnDronesToBay context =
@@ -725,32 +724,28 @@ returnDronesToBay context =
                 else
                     Just
                         (describeBranch "I see there are drones in local space. Return those to bay."
-                            (decideActionForCurrentStep
-                                        [ EffectOnWindow.KeyDown EffectOnWindow.vkey_SHIFT
-                                        , EffectOnWindow.KeyDown EffectOnWindow.vkey_R
-                                        , EffectOnWindow.KeyUp EffectOnWindow.vkey_R
-                                        , EffectOnWindow.KeyUp EffectOnWindow.vkey_SHIFT
-                                        ]
-                                    )
-                                ))
-                                )
+                            (useContextMenuCascade
+                                ( "drones group", droneGroupInLocalSpace.header.uiNode )
+                                (useMenuEntryWithTextContaining "Return to drone bay" menuCascadeCompleted)
+                                context
+                            )
+                        )
+            )
 
-lockTargetFromOverviewEntry : ShipUI → OverviewWindowEntry → Maybe DecisionPathNode
-lockTargetFromOverviewEntry shipUI nextOverviewEntryToLock =
-describeBranch (“Lock target from overview entry '” ++ (nextOverviewEntryToLock.objectName |> Maybe.withDefault “”) ++ “’”)
-(decideActionForCurrentStep
-([ [ EffectOnWindow.KeyDown EffectOnWindow.vkey_CONTROL ]
-, nextOverviewEntryToLock.uiNode |> clickOnUIElement MouseButtonLeft
-, [ EffectOnWindow.KeyUp EffectOnWindow.vkey_CONTROL ]
-]
-|> List.concat
-)
-)
+
+lockTargetFromOverviewEntry : OverviewWindowEntry -> BotDecisionContext -> DecisionPathNode
+lockTargetFromOverviewEntry overviewEntry context =
+    describeBranch ("Lock target from overview entry '" ++ (overviewEntry.objectName |> Maybe.withDefault "") ++ "'")
+        (useContextMenuCascadeOnOverviewEntry
+            (useMenuEntryWithTextEqual "Lock target" menuCascadeCompleted)
+            overviewEntry
+            context
+        )
 
 
 readShipUIModuleButtonTooltips : BotDecisionContext -> Maybe DecisionPathNode
 readShipUIModuleButtonTooltips =
-    EveOnline.AppFrameworkSeparatingMemory.readShipUIModuleButtonTooltipWhereNotYetInMemory
+    EveOnline.BotFrameworkSeparatingMemory.readShipUIModuleButtonTooltipWhereNotYetInMemory
 
 
 knownModulesToActivateAlways : BotDecisionContext -> List ( String, EveOnline.ParseUserInterface.ShipUIModuleButton )
@@ -761,7 +756,7 @@ knownModulesToActivateAlways context =
         |> List.filterMap
             (\moduleButton ->
                 moduleButton
-                    |> EveOnline.AppFramework.getModuleButtonTooltipFromModuleButton context.memory.shipModules
+                    |> EveOnline.BotFramework.getModuleButtonTooltipFromModuleButton context.memory.shipModules
                     |> Maybe.andThen (tooltipLooksLikeModuleToActivateAlways context)
                     |> Maybe.map (\moduleName -> ( moduleName, moduleButton ))
             )
@@ -774,7 +769,7 @@ tooltipLooksLikeModuleToActivateAlways context =
         >> getAllContainedDisplayTexts
         >> List.filterMap
             (\tooltipText ->
-                context.eventContext.appSettings.modulesToActivateAlways
+                context.eventContext.botSettings.modulesToActivateAlways
                     |> List.filterMap
                         (\moduleToActivateAlways ->
                             if tooltipText |> String.toLower |> String.contains (moduleToActivateAlways |> String.toLower) then
@@ -788,25 +783,27 @@ tooltipLooksLikeModuleToActivateAlways context =
         >> List.head
 
 
-initState : State
-initState =
-    EveOnline.AppFrameworkSeparatingMemory.initState
-        { lastDockedStationNameFromInfoPanel = Nothing
-        , shipModules = EveOnline.AppFramework.initShipModulesMemory
-        , shipWarpingInLastReading = Nothing
-        , visitedAnomalies = Dict.empty
-        }
+botMain : InterfaceToHost.BotConfig State
+botMain =
+    { init = EveOnline.BotFrameworkSeparatingMemory.initState initBotMemory
+    , processEvent =
+        EveOnline.BotFrameworkSeparatingMemory.processEvent
+            { parseBotSettings = parseBotSettings
+            , selectGameClientInstance = always EveOnline.BotFramework.selectGameClientInstanceWithTopmostWindow
+            , updateMemoryForNewReadingFromGame = updateMemoryForNewReadingFromGame
+            , statusTextFromDecisionContext = statusTextFromState
+            , decideNextStep = anomalyBotDecisionRoot
+            }
+    }
 
 
-processEvent : InterfaceToHost.AppEvent -> State -> ( State, InterfaceToHost.AppResponse )
-processEvent =
-    EveOnline.AppFrameworkSeparatingMemory.processEvent
-        { parseAppSettings = parseBotSettings
-        , selectGameClientInstance = always EveOnline.AppFramework.selectGameClientInstanceWithTopmostWindow
-        , updateMemoryForNewReadingFromGame = updateMemoryForNewReadingFromGame
-        , statusTextFromDecisionContext = statusTextFromState
-        , decideNextStep = anomalyBotDecisionRoot
-        }
+initBotMemory : BotMemory
+initBotMemory =
+    { lastDockedStationNameFromInfoPanel = Nothing
+    , shipModules = EveOnline.BotFramework.initShipModulesMemory
+    , shipWarpingInLastReading = Nothing
+    , visitedAnomalies = Dict.empty
+    }
 
 
 statusTextFromState : BotDecisionContext -> String
@@ -978,7 +975,7 @@ updateMemoryForNewReadingFromGame context botMemoryBefore =
             |> List.head
     , shipModules =
         botMemoryBefore.shipModules
-            |> EveOnline.AppFramework.integrateCurrentReadingsIntoShipModulesMemory context.readingFromGameClient
+            |> EveOnline.BotFramework.integrateCurrentReadingsIntoShipModulesMemory context.readingFromGameClient
     , shipWarpingInLastReading = shipIsWarping
     , visitedAnomalies = visitedAnomalies
     }
